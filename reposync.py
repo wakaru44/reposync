@@ -84,6 +84,7 @@ def get_repos_bitbucket(username):
     """Get the public repos of this guy"""
     assert username is not ""
     logging.debug("Getting bitbucket repos for {0}".format(username))
+    return None
     return "bitbucket {0}".format(username)
 
 
@@ -175,9 +176,15 @@ if __name__=="__main__":
 
     #TODO: write the method to take all the repos, go to the folder, check if is downloaded, and if not, clone it
     for acc in accounts:
-        # go to define_path,
+        if repos[acc]:
+            logging.debug(len(repos[acc]))
+        else:
+            logging.info("No repos on this account '{0}'".format(acc))
+            break
+
         for repo in repos[acc]:
             #  check if repo exists, 
+            logging.info("Getting repository {0}".format(repo))
             repo_name = extract_repo_name(repo)
             base_path = define_path(settings.workspace, acc) 
             logging.debug("base path {0}".format(base_path))
