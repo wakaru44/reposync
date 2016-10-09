@@ -2,12 +2,10 @@
 
 import requests
 from os.path import join,isdir,expanduser
-from os import makedirs
-import os
 import sys
 import json
 import logging
-import subprocess
+import spur
 
 import argparse
 import settings
@@ -24,18 +22,7 @@ command_parser = argparse.ArgumentParser(
 
 command_parser.add_argument("-s","--settings", dest="settingsfile", help="alternative settings", required=False)
 command_parser.add_argument("-v","--verbose", action="store_true", help="extra logging", required=False, default=False)
-
-class cd:
-    """Context manager for changing the current working directory"""
-    def __init__(self, newPath):
-        self.newPath = os.path.expanduser(newPath)
-
-    def __enter__(self):
-        self.savedPath = os.getcwd()
-        os.chdir(self.newPath)
-
-    def __exit__(self, etype, value, traceback):
-        os.chdir(self.savedPath)
+command_parser.add_argument("-w","--workspace",dest="workspace",  help="override the base workspace", required=False)
 
 def define_path(base_path, account):
     """extract the username and site details from the account
@@ -51,7 +38,8 @@ def create_folders(base_path, account):
     wanted_path = define_path(base_path, account)
     logging.debug(wanted_path)
     try:
-        makedirs(wanted_path)
+        shell = spur.LocalShell()
+        output = shell.run(["mkdir","-p", wanted_path])
         logging.info("Created working folder on {0}".format(wanted_path))
         return True
     except OSError as e:
@@ -84,6 +72,7 @@ def get_repos_bitbucket(username):
     """Get the public repos of this guy"""
     assert username is not ""
     logging.debug("Getting bitbucket repos for {0}".format(username))
+    logging.error("Getting bitbucket repos not implemented".format(username))
     return None
     return "bitbucket {0}".format(username)
 
@@ -114,29 +103,16 @@ def clone_repo(base_path, repo):
     """
     go to the base_path and clone the repo
     """
-    with cd(base_path):
-        output = do_call("git clone {0}".format(repo))
-        if output == 1:
-            logging.info("The repo exists")
-        else:
-            logging.erro("Fuck")
+    shell = spur.LocalShell()
+    output = shell.run(["git","clone", repo], base_path)
+    if output == 1:
+        logging.info("The repo exists")
+    else:
+        logging.error("Fuck")
+        logging.info(output.output)
     return output
 
 
-
-def do_call(command):
-    """
-    a nicer method to call subprocess.call
-    """
-
-    try:
-        result = subprocess.check_output(command.split(" "), shell=True)
-        return result
-    except subprocess.CalledProcessError as e:
-        return_code = e.returncode
-        logging.error("failed to run '{0}'".format(command))
-        logging.error(e)
-        return return_code
 
 if __name__=="__main__":
     # Load passed parameters
@@ -159,12 +135,13 @@ if __name__=="__main__":
 
     # load the defined repos from somewhere, aka the settings file
     accounts = settings.accounts
+    workspace = args["workspace"] or settings.workspace
     # then build the folder structure
     logging.info("""
     Creating Folder Structure
     =========================""")
     for acc in accounts:
-        create_folders(settings.workspace, acc)
+        create_folders(workspace, acc)
     # then go to each repo and find out the list
     repos = {}
     logging.info("""
@@ -186,7 +163,7 @@ if __name__=="__main__":
             #  check if repo exists, 
             logging.info("Getting repository {0}".format(repo))
             repo_name = extract_repo_name(repo)
-            base_path = define_path(settings.workspace, acc) 
+            base_path = define_path(workspace, acc) 
             logging.debug("base path {0}".format(base_path))
             repo_path = join(base_path,repo_name) 
             logging.debug("repo path {0}".format(repo_path))
