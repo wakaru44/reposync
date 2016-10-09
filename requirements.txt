@@ -1,0 +1,11 @@
+funcsigs==1.0.2
+get==0.0.0
+mock==2.0.0
+pbr==1.10.0
+post==0.0.0
+public==0.0.0
+query-string==0.0.0
+request==0.0.0
+requests==2.11.1
+setupfiles==0.0.13
+six==1.10.0
