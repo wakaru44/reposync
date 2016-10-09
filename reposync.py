@@ -1,7 +1,7 @@
 #!/usr/bin/ python
 
 import requests
-from os.path import join,exists
+from os.path import join,isdir,expanduser
 from os import makedirs
 import os
 import sys
@@ -43,7 +43,7 @@ def define_path(base_path, account):
     """
     assert base_path is not ""
     assert account is not ""
-    return join(base_path, account)
+    return join(expanduser(base_path), account)
 
 
 def create_folders(base_path, account):
@@ -101,7 +101,12 @@ def get_repos_github(username):
 def extract_repo_name(repo):
     """ get the name out of the url of the repo
     """
-    return repo.split("/")[-1][:-4] #Dirty. but works
+    result = repo.split("/")[-1][:-4] #Dirty. but works
+    logging.debug("The name of the repo is {0}".format(result))
+    if result is not "":
+        return result 
+    else:
+        raise TypeError("The repo {0} is bullshit".format(repo))
 
 
 def clone_repo(base_path, repo):
@@ -175,12 +180,17 @@ if __name__=="__main__":
             #  check if repo exists, 
             repo_name = extract_repo_name(repo)
             base_path = define_path(settings.workspace, acc) 
+            logging.debug("base path {0}".format(base_path))
             repo_path = join(base_path,repo_name) 
-            if exists(join(repo_path,".git")):
+            logging.debug("repo path {0}".format(repo_path))
+            git_path = join(repo_path,".git/")
+            logging.info("Git path {0}".format(git_path))
+            if isdir(git_path):
                 # and if it does, go on
+                logging.info("'{0}' is already in '{1}'".format(repo_name, repo_path))
                 break
             else:
                 # if it doesnt exist, go there and clone
-                logging.info("Clonning {0} in {1}".format(repo_name, repo_path))
+                logging.info("Clonning '{0}' in '{1}'".format(repo_name, repo_path))
                 clone_repo(base_path, repo)
 
