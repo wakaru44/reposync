@@ -172,7 +172,7 @@ if __name__=="__main__":
             if isdir(git_path):
                 # and if it does, go on
                 logging.info("'{0}' is already in '{1}'".format(repo_name, repo_path))
-                break
+                continue
             else:
                 # if it doesnt exist, go there and clone
                 logging.info("Clonning '{0}' in '{1}'".format(repo_name, repo_path))
